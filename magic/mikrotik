@@ -1,0 +1,102 @@
+# NPK firmware header, used by Mikrotik
+0	ubelong	0x1EF1D0BA	NPK package header,
+>4	lelong	<0	{invalid}
+>4	lelong	x	image size: %d,
+>14	string	x	image name: "%s"
+# footer 10 00 01 00 00 00 49
+
+# DPK firmware header, used by Mikrotik
+0	ubelong	0xFB0F10A1	NPK package header (hidden, DPK),
+>4	lelong	<0	{invalid}
+>4	lelong	x	image size: %d,
+>14	string	x	image name: "%s"
+# footer 03 00 00 00 00 00
+
+# Hard config
+0	string	Hard	Mikrotik Hard config header (LE)
+
+0	string	draH	Mikrotik Hard config header (BE)
+
+# Soft config
+0	string	Soft	Mikrotik Soft config header (LE)
+
+0	string	tfoS	Mikrotik Soft config header (BE)
+
+# Mikrotik cfg
+# soft has CRC32, hard does not
+0	regex	(draH|tfoS)	Mikrotik CFG header (BE):
+>0	ubelong	x	{strlen:4}
+>0	string	x	type: {string}%s;
+>0	string	tfoS
+>>4	ubelong	x	CRC32: "0x%x", #CRC32 (rhash) of whole cfg part, with crc32 bytes zeroed
+>>8	ubeshort	>0	first tag: len: 0x%x,
+>>8	ubeshort	>0x20	{invalid}
+#>>>8	ubeshort	>0	{strlen:%d}
+>>>10	ubeshort	>0	id: 0x%x
+#>>>12	string	x	tag_value: {string}%b
+>0	string	draH
+>>4	ubeshort	>0	first tag: len: 0x%x,
+>>4	ubeshort	>0x50	{invalid}
+>>6	ubeshort	>0	id: 0x%x
+#>>4	ubeshort	>0	{strlen:%d}
+#>>>8	string	x	tag_value: {string}%s
+
+0	regex	(Hard|Soft)	Mikrotik CFG header (LE):
+>0	ulelong	x	{strlen:4}
+>0	string	x	type: {string}%s;
+>0	string	Soft
+>>4	ulelong	>0	CRC32: "0x%x", #CRC32 (rhash) of whole cfg part, with crc32 bytes zeroed
+>>8	uleshort	>0	first tag: id: 0x%x
+>>8	uleshort	>0x20	{invalid}
+>>10	uleshort	>0	(len: 0x%x)
+#>>>10	ubeshort	>0	{strlen:%d}
+#>>>12	string	x	tag_value: {string}%b
+>0	string	Hard
+>>4	uleshort	>0	first tag: id: 0x%x
+>>4	uleshort	>0x50	{invalid}
+>>6	uleshort	>0	(len: 0x%x)
+#>>6	ubeshort	>0	{strlen:%d}
+#>>>8	string	x	tag_value: {string}%s
+
+
+# Mikrotik FWF file headers (0x20 long)
+0	regex	(4qpi|4Npi|0qpi|7qpi|sysM|73AM|461a|NplA|nplA)	Mikrotik ARM FWF header:
+# only for LE
+>0	ulelong	x	{strlen:4}
+>0	string	x	device magic: {string}%s,
+>0	string	4qpi	ipq40xx no-nand,
+>0	string	4Npi	ipq40xx nand,
+>0	string	0qpi	ipq80xx nand,
+>0	string	sysM	dx3230 no-nand,
+>0	string	NplA	al2,
+>4	ulelong	x	CRC32: 0x%x, #CRC32 (rhash) of fwf file (including header), with crc32 bytes zeroed
+>4	ulelong <1	{invalid}
+>8	ulelong x	FWF size (ex. header): %d,
+>8	ulelong <1	{invalid}
+>8	ulelong+0x20	x	{size:%d}
+>12	string  x	version: "%s"
+>0x20	ulelong	x	FWF size (ex. final CRC): %d,
+>0x24	ulelong	x	FWF ?uncompressed size: %d,
+>(8.l+0x20-4)	ulelong	x	header-less CRC32: 0x%x #CRC32 (rhash) of fwf file, skipping 0x20 header, and this 0x4 CRC32 footer
+
+
+# Mikrotik FWF file headers (0x20 long)
+0	regex	(L559|0559)	Mikrotik MIPS BE FWF header:
+# only for BE
+>0	ubelong	x	{strlen:4}
+>0	string	x	device magic: {string}%s,
+>0	string	L559	qca955x no-nand,
+>0	string	0559	qca955x nand,
+>4	ubelong	x	CRC32: 0x%x, #CRC32 (rhash) of fwf file (including header), with crc32 bytes zeroed dd if=/dev/zero of=qca9550L-6.45.8.fwf seek=4 count=4 bs=1 conv=notrunc
+>4	ubelong <1	{invalid}
+>8	ubelong x	FWF size (ex. header): %d,
+>8	ubelong <1	{invalid}
+>8	ubelong+0x20	x	{size:%d}
+>12	string  x	version: "%s"
+>0x40	ubelong	x	FWF size (ex. final CRC): %d,
+>0x44	ubelong	x	hardcfg_ptr: 0x%x
+>0x48	ubelong	x	(len: 0x%x),
+>0x4c	ubelong	x	bootloader2_ptr: 0x%x,
+>0x50	ubelong	x	softcfg_ptr: 0x%x
+>0x54	ubelong	x	(len: 0x%x)
+>(8.L+0x20-4)	ulelong	x	header-less CRC32: 0x%x #CRC32 (rhash) of fwf file, skipping 0x20 header, and this 0x4 CRC32 footer
