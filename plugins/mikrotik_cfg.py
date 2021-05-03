@@ -76,10 +76,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
         print ("\t tag@0x{:x}:".format(tag_start_offset) +
                 " Type: 0x{0:x}".format(cfg_item_type) +
                 " (len: 0x%x)" % cfg_item_size, end="")
-        if cfg_item_size < 12:
-            print (" Bytes: {}".format(cfg_item))
-        else:
-            print ("")
+        print (" Bytes: {}".format(cfg_item[0:9]))
 
         return True
 
