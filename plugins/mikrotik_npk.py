@@ -106,10 +106,14 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
                 npk_item_offsets = array.array('L')
 
                 filename = os.path.abspath(result.file.path)
-                data = binwalk.core.common.BlockFile(filename, 'rb', offset=offset)
+                data = binwalk.core.common.BlockFile(filename, mode='rb', offset=result.offset)
+
+                print ("\t length of loaded NPK: {}".format(data.size))
+                npk_magic = struct.unpack("4s", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
+                print ("\t Magic: {}".format(npk_magic))
 
                 # skip the NPK header
-                data.seek(4)
+                #data.seek(4)
                 # NPK total size (NPK file length - 8)
                 npk_total_size = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
                 #npk_total_size = struct.unpack("<L", binwalk.core.compat.str2bytes(data[offset:offset+4]))[0]
