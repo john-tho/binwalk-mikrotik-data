@@ -50,7 +50,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
     _signature_reached = False
     _hash = hashlib.sha1()
 
-    def _parse_cfg_item(self, data, endian):
+    def _parse_cfg_item(self, data, endian, header_type):
         tag_start_offset = data.tell()
         tag_part1 = struct.unpack(endian+"H",
                 binwalk.core.compat.str2bytes(data.read(n=2)))[0]
@@ -71,12 +71,26 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
             data.seek(tag_start_offset)
             return False
 
-        cfg_item = struct.unpack("{}s".format(cfg_item_size), binwalk.core.compat.str2bytes(data.read(n=cfg_item_size)))[0]
+        cfg_item_read = data.read(n=cfg_item_size)
+        cfg_item_bytes = binwalk.core.compat.str2bytes(cfg_item_read)
+        cfg_item = struct.unpack("{}s".format(cfg_item_size), cfg_item_bytes)[0]
 
         print ("\t tag@0x{:x}:".format(tag_start_offset) +
-                " Type: 0x{0:x}".format(cfg_item_type) +
-                " (len: 0x%x)" % cfg_item_size, end="")
-        print (" Bytes: {}".format(cfg_item[0:9]))
+                " ID:0x{0:0>2x}".format(cfg_item_type) +
+                " len:0x{:0>2x}".format(cfg_item_size),
+                end="")
+        if (cfg_item_size > 10):
+            print (" (truncated)", end="")
+        # pyhon prints bytestring bytes as ASCII
+        if (((header_type == b"Hard") and
+             (cfg_item_type in [5,6,0xb,0x17,0x21])) or
+            ((header_type == b"Soft") and
+             (cfg_item_type in [6])) or
+            (cfg_item_size > 10)):
+                print (" = {}".format(cfg_item[0:9]))
+        # force print as hex
+        else:
+                print (" = {}".format(cfg_item_bytes.hex(" ")))
 
         return True
 
@@ -120,7 +134,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
                     print ("\tCFG CRC32: 0x%x" % crc32)
 
                 while True:
-                    if not self._parse_cfg_item(data, endian):
+                    if not self._parse_cfg_item(data, endian, header_type):
                         break
 
                 data.close()
