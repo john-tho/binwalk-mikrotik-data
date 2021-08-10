@@ -1,14 +1,23 @@
 # NPK firmware header, used by Mikrotik
 0	ubelong	0x1EF1D0BA	NPK package header,
->4	lelong	<0	{invalid}
->4	lelong	x	image size: %d,
->14	string	x	image name: "%s"
+>4	ulelong	<0	{invalid}
+>4	ulelong	x	image size: %d,
+#>8	uleshort x	part_type: %x, #first NPK parttype
+#>10	ulelong x	part_len 0x%x, #first NPK partlen
+>8	uleshort 0x12	#first NPK parttype is part_info
+>>14	string	x	image name: "%s"
+>8	uleshort !0x12	#first NPK parttype not 12 part_info
+#>>(10.l+8+2+4) uleshort x	part_type %x, #second NPK parttype
+#>>(10.l+8+2+4+2) ulelong x	part_len 0x%x, #second NPK partlen
+>>(10.l+8+2+4) uleshort 0x12	#second NPK parttype
+#>>>(10.l+8+2+4+2) ulelong x	#second NPK partlen
+>>>(10.l+8+2+4+2+4) string x	image name: "%s"
 # footer 10 00 01 00 00 00 49
 
 # DPK firmware header, used by Mikrotik
 0	ubelong	0xFB0F10A1	NPK package header (hidden, DPK),
->4	lelong	<0	{invalid}
->4	lelong	x	image size: %d,
+>4	ulelong	<0	{invalid}
+>4	ulelong	x	image size: %d,
 >14	string	x	image name: "%s"
 # footer 03 00 00 00 00 00
 
