@@ -51,7 +51,8 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
             21: "squashfs block",
             22: "zero padding",
             23: "digest",
-            24: "channel"
+            24: "channel",
+            25: "?"
                 }
 
     _npk_footer = b'\x10\x00\x01\x00\x00\x00\x49'
