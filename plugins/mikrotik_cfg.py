@@ -45,6 +45,22 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
             11: "serial number",
             13: "memory size"
                 }
+    _hardcfg_hwopts = {
+            0: "no_uart",
+            1: "voltage",
+            2: "usb",
+            3: "attiny",
+            9: "pulse_duty_cycle",
+            14: "no_nand",
+            15: "lcd",
+            16: "poe_out",
+            17: "microSD",
+            18: "SIM",
+            20: "SFP",
+            21: "Wi-Fi",
+            22: "ts for ADC",
+            29: "PLC"
+            }
 
     _cfg_footer = b'\x10\x00\x01\x00\x00\x00\x49'
     _signature_reached = False
@@ -91,6 +107,36 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
         # force print as hex
         else:
                 print (" = {}".format(cfg_item_bytes.hex(" ")))
+
+        if (((header_type == b"Hard") and
+             (cfg_item_type in [0x15]))):
+            hwopts = struct.unpack(endian+"L", cfg_item_bytes)[0]
+            #bit = 0
+            #bits = hwopts
+            #hwopts_bits = []
+            #while bits:
+            #    if (bits & 1):
+            #        hwopts_bits.append(bit)
+            #    bits = bits >> 1
+            #    bit = bit + 1
+
+            # functional / list comprehension
+            hwopts_bits = [index for index,bit
+                           in enumerate(reversed(list(bin(hwopts))[2:]))
+                           if int(bit) == 1]
+            hwopts_defs = ["{}:{}".format(key,self._hardcfg_hwopts[key])
+                           for key
+                           in hwopts_bits
+                           if key in self._hardcfg_hwopts.keys()]
+            hwopts_unkdefs = ["{}:{}".format(key,"?")
+                              for key
+                              in hwopts_bits
+                              if key not in self._hardcfg_hwopts.keys()]
+
+            #print ("\t\thwcfg = {:b}".format(hwopts))
+            print ("\t\thwcfg = {}".format(hwopts_bits))
+            print ("\tHWOPTS:{}".format(hwopts_defs + hwopts_unkdefs))
+
 
         return True
 
