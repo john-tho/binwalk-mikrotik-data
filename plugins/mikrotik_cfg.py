@@ -66,7 +66,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
     _signature_reached = False
     _hash = hashlib.sha1()
 
-    def _parse_cfg_item(self, data, endian, header_type):
+    def _parse_cfg_item(self, data, endian, header_type, tags):
         tag_start_offset = data.tell()
         tag_part1 = struct.unpack(endian+"H",
                 binwalk.core.compat.str2bytes(data.read(n=2)))[0]
@@ -89,6 +89,8 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
 
         cfg_item_read = data.read(n=cfg_item_size)
         cfg_item_bytes = binwalk.core.compat.str2bytes(cfg_item_read)
+        tags[cfg_item_type] = cfg_item_bytes
+
         cfg_item = struct.unpack("{}s".format(cfg_item_size), cfg_item_bytes)[0]
 
         print ("\t tag@0x{:x}:".format(tag_start_offset) +
@@ -179,8 +181,10 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
                             binwalk.core.compat.str2bytes(data.read(n=4)))[0]
                     print ("\tCFG CRC32: 0x%x" % crc32)
 
+                tags = {}
+
                 while True:
-                    if not self._parse_cfg_item(data, endian, header_type):
+                    if not self._parse_cfg_item(data, endian, header_type, tags):
                         break
 
                 next_byte_offset = data.tell()
@@ -190,5 +194,6 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
                 else:
                     next_4k_boundary = 0x1000 * (next_byte_offset // 0x1000 + 1)
                 print ("\tnext 4k boundary:0x{0:X}, cfgtag min. len: 0x{1:X}".format(next_4k_boundary, next_4k_boundary - offset))
+                print ("\ttag IDs:{}".format(sorted(tags.keys())))
 
                 data.close()
