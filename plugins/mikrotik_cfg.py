@@ -101,7 +101,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
             if result.description.lower().startswith(self.SIGNATURE_DESCRIPTION) is True:
                 #print ("Module '%s' has reported a valid result:" % self.module.name)
                 #print ("\tFile: %s" % result.file.name)
-                #print ("\tOffset: 0x%X" % result.offset)
+                print ("{0: <14d}0x{0: <14X}{1}".format(result.offset, result.description))
                 #print ("\tDescription: %s" % result.description)
 
                 offset = result.offset
