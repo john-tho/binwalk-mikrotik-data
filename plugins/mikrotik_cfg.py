@@ -137,4 +137,12 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
                     if not self._parse_cfg_item(data, endian, header_type):
                         break
 
+                next_byte_offset = data.tell()
+                last_tag_final_byte = next_byte_offset - 1
+                if next_byte_offset % 0x1000 == 0:
+                    next_4k_boundary = next_byte_offset
+                else:
+                    next_4k_boundary = 0x1000 * (next_byte_offset // 0x1000 + 1)
+                print ("\tnext 4k boundary:0x{0:X}".format(next_4k_boundary))
+
                 data.close()
