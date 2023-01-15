@@ -100,10 +100,10 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
             data.seek(npk_item_offset)
             self._hash.update(binwalk.core.compat.str2bytes(data.read(n=npk_item_size+6)))
 
-        print ("header offset 0x%x" % npk_item_offset)
+        print ("header offset: 0x%x" % npk_item_offset)
         print ("Type: 0x{0:x} {1:s}".format(npk_item_type, self._npk_item_types[npk_item_type]))
         print ("Size: 0x%x" % npk_item_size)
-        print ("data offset 0x%x" % npk_item_data_offset)
+        print ("data offset: 0x%x" % npk_item_data_offset)
         print ("{}".format(npk_item))
 
     # The scan method is invoked each time the module registers a result during the file scan.
