@@ -70,6 +70,18 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
             npk_item = struct.unpack("{}s".format(npk_item_size), binwalk.core.compat.str2bytes(data.read(n=npk_item_size)))[0]
         else:
             data.seek(data.tell() + npk_item_size)
+        if npk_item_type == 4: #"file container",
+            data.seek(npk_item_data_offset)
+            npk_item_bytes = binwalk.core.compat.str2bytes(data.read(n=npk_item_size))
+            print_offset = 0
+            print_length = 0x50
+            while ((print_offset < print_length) &
+                   (len(npk_item_bytes[print_offset:print_offset+0x10]) > 0)):
+                print ("0x{:x} = {}".format(npk_item_data_offset+print_offset,
+                                            npk_item_bytes[print_offset:print_offset+0x10].hex(" ")))
+                print_offset = print_offset+0x10
+            data.seek(npk_item_offset)
+
         if npk_item_type == 9:
             self._signature_reached = True
             data.seek(npk_item_offset)
