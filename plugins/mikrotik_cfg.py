@@ -194,6 +194,6 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
                 else:
                     next_4k_boundary = 0x1000 * (next_byte_offset // 0x1000 + 1)
                 print ("\tnext 4k boundary:0x{0:X}, cfgtag min. len: 0x{1:X}".format(next_4k_boundary, next_4k_boundary - offset))
-                print ("\ttag IDs:[{}]".format((', '.join(hex(tag) for tag in sorted(tags.keys())))))
+                print ("\t{} tag IDs:[{}]".format(header_type.decode(), (', '.join(hex(tag) for tag in sorted(tags.keys())))))
 
                 data.close()
