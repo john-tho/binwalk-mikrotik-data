@@ -4,6 +4,8 @@ import struct
 import binwalk.core.common
 import binwalk.core.compat
 import binwalk.core.plugin
+import zlib
+from datetime import datetime
 
 # Each plugin must be subclassed from binwalk.core.plugin.Plugin
 class MikrotikNPKFileParser(binwalk.core.plugin.Plugin):
@@ -30,88 +32,76 @@ class MikrotikNPKFileParser(binwalk.core.plugin.Plugin):
         pass
         print ("Module '%s' is about to scan file '%s'!" % (self.module.name, fp.path))
 
+    _debug = False
+
     _npk_file_item_types = {
             0x81a4: "file",
             0x81ed: "ELF",
             0x41ed: "dir"
     }
 
-    npk_file_chunk_full_size = 0x8000
-    npk_file_chunk_next_header = 2
-    npk_file_chunk_final = False
-
-    def _parse_npk_file_chunkheader(self, data):
-        npk_file_chunk_start = struct.unpack("1s", binwalk.core.compat.str2bytes(data.read(n=1)))[0]
-        npk_file_chunk_len = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        npk_file_chunk_magic = struct.unpack("2s", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-
-        self.npk_file_chunk_next_header = data.tell() + npk_file_chunk_len
-        self.npk_file_chunk_final = npk_file_chunk_len < self.npk_file_chunk_full_size
-        if (self.npk_file_chunk_final):
-            print ("\t chunk at 0x{: <{}x} start:{} size:0x{:x} end:{}{})".format(
-                data.tell() - 5,
-                len("{:x}".format(data.size)),
-                npk_file_chunk_start.hex(" "),
-                npk_file_chunk_len,
-                npk_file_chunk_magic.hex(" "),
-                " final chunk header" if self.npk_file_chunk_final else ""
-            ))
-
     def _parse_npk_file_item(self, data):
-        debug = False
         npk_file_item_offset = data.tell()
         npk_file_item_type = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        if (debug):
+        if (self._debug):
             print("type: 0x{:x}".format(npk_file_item_type))
         npk_file_item_zeros1 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
         npk_file_item_zeros1b = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
         if ((npk_file_item_zeros1<<8 | npk_file_item_zeros1) != 0):
             print("!!zeroes1: 0x{:x} 0x{:x}".format(npk_file_item_zeros1,npk_file_item_zeros1b))
-        npk_file_item_unknown1 = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        if (True):
-            print("unknown1: 0x{:x}".format(npk_file_item_unknown1))
-        npk_file_item_file_sep = struct.unpack("10s", binwalk.core.compat.str2bytes(data.read(n=10)))[0]
-        data.seek(data.tell()-10)
-        npk_file_item_file_sep1 = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        npk_file_item_file_sep2 = struct.unpack("6s", binwalk.core.compat.str2bytes(data.read(n=6)))[0]
-        npk_file_item_file_sep1rep = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        if (True):
-            print("file separator: {}".format(npk_file_item_file_sep.hex(" ")))
-        if (npk_file_item_file_sep1 != npk_file_item_file_sep1rep):
-            print("!!file first & last two bytes !=: {:x} {:x}".format(npk_file_item_file_sep1, npk_file_item_file_sep1rep))
+
+        npk_file_item_unknown1 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
+        npk_file_item_mtime = datetime.fromtimestamp(npk_file_item_unknown1)
+        if (self._debug):
+            print("unknown1: 0x{:08x} {}".format(npk_file_item_unknown1,
+                                          datetime.fromtimestamp(npk_file_item_unknown1))
+                  )
+        npk_file_item_unknown2 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
+        if (self._debug):
+            print("unknown2: 0x{:08x}".format(npk_file_item_unknown2))
+        npk_file_item_unknown3 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
+        npk_file_item_ctime = datetime.fromtimestamp(npk_file_item_unknown3)
+        if (self._debug):
+            print("unknown3: 0x{:08x} {}".format(npk_file_item_unknown3,
+                                          datetime.fromtimestamp(npk_file_item_unknown3))
+                  )
+
+        if (False):
+            data.seek(data.tell()-12)
+
+            data.seek(data.tell()+2)
+
+            npk_file_item_file_sep = struct.unpack("10s", binwalk.core.compat.str2bytes(data.read(n=10)))[0]
+            data.seek(data.tell()-10)
+
+            npk_file_item_file_sep1 = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
+            npk_file_item_file_sep2 = struct.unpack("6s", binwalk.core.compat.str2bytes(data.read(n=6)))[0]
+            npk_file_item_file_sep1rep = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
+            if (True):
+                print("file separator: {}".format(npk_file_item_file_sep.hex(" ")))
+            if (npk_file_item_file_sep1 != npk_file_item_file_sep1rep):
+                print("!!file first & last two bytes !=: {:x} {:x}".format(npk_file_item_file_sep1, npk_file_item_file_sep1rep))
+
         npk_file_item_zeros2 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
         if ((npk_file_item_zeros2) != 0):
             print("!!zeroes2: 0x{:x}".format(npk_file_item_zeros2))
         npk_file_item_size = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
-        if (debug):
+        if (self._debug):
             print("item size: 0x{:x}".format(npk_file_item_size))
         npk_file_item_namelen = struct.unpack("<H", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-        if (debug):
+        if (self._debug):
             print("item namelen: 0x{:x}".format(npk_file_item_namelen))
         npk_file_item_name = struct.unpack("{}s".format(npk_file_item_namelen), binwalk.core.compat.str2bytes(data.read(n=npk_file_item_namelen)))[0]
-        if (debug):
+        if (self._debug):
             print("item name: {}".format(npk_file_item_name))
         npk_file_item_name = npk_file_item_name.decode()
-        if (debug):
+        if (self._debug):
             print("item name decoded: {}".format(npk_file_item_name))
         npk_file_item_data_offset = data.tell()
         npk_file_item = ""
         #print("offset: 0x{:x} of 0x{:x}".format(data.tell(), data.size))
 
-        next_item = data.tell() + npk_file_item_size
-        npk_file_item_size_remaining = npk_file_item_size
-
-        while (npk_file_item_size_remaining):
-            chunk_header_within_file = (next_item > self.npk_file_chunk_next_header)
-            if (chunk_header_within_file):
-                npk_file_item_size_here = self.npk_file_chunk_next_header - data.tell()
-            else:
-                npk_file_item_size_here = npk_file_item_size_remaining
-
-            npk_file_item = struct.unpack("{}s".format(npk_file_item_size_here), binwalk.core.compat.str2bytes(data.read(n=npk_file_item_size_here)))[0]
-            npk_file_item_size_remaining -= npk_file_item_size_here
-            if (chunk_header_within_file):
-                    self._parse_npk_file_chunkheader(data)
+        npk_file_item = struct.unpack("{}s".format(npk_file_item_size), binwalk.core.compat.str2bytes(data.read(n=npk_file_item_size)))[0]
 
         if(True):
             print ("NPK item header:"
@@ -128,11 +118,21 @@ class MikrotikNPKFileParser(binwalk.core.plugin.Plugin):
                        width=len("{:x}".format(data.size))
                        )
                    + " name: {}".format(npk_file_item_name)
+                   + " (unzlib) data offset 0x{:x}".format(
+                       npk_file_item_data_offset
+                       )
+                   + " ctime: {} mtime: {}".format(
+                       npk_file_item_ctime,
+                       npk_file_item_mtime
+                       )
             )
 
         return {"type": npk_file_item_type,
                 "name": npk_file_item_name,
-                "bytes": npk_file_item}
+                "bytes": npk_file_item,
+                "ctime": npk_file_item_ctime,
+                "mtime": npk_file_item_mtime
+                }
 
     # The scan method is invoked each time the module registers a result during the file scan.
     # The plugin has full read/write access to the result data.
@@ -151,25 +151,34 @@ class MikrotikNPKFileParser(binwalk.core.plugin.Plugin):
                 data = binwalk.core.common.BlockFile(filename, mode='rb', offset=result.offset)
 
                 print ("\t length of loaded NPK section: {}".format(data.size))
-                npk_file_magic = struct.unpack("2s", binwalk.core.compat.str2bytes(data.read(n=2)))[0]
-                print ("\t Magic: {}".format(npk_file_magic.hex(" ")))
-                self._parse_npk_file_chunkheader(data)
 
-                # skip the NPK file header
-                #data.seek(7)
-                # NPK total size (NPK file length - 4 for tailing ?CRC)
-                npk_file_total_size = data.size - 4
+                decompressor = zlib.decompressobj()
+                decompressed = decompressor.decompress(binwalk.core.compat.str2bytes(data.read()))
+                decompressed_all_consumed = decompressor.eof
+                decompressed_unused = decompressor.unused_data
+                decompressor.flush()
+                print ("zlib decompressed all input: {}".format(decompressed_all_consumed))
+                if (self._debug):
+                    print ("all bytes consumed?: {}".format(
+                               decompressor.eof)
+                           + " first 0x10 bytes: {}".format(
+                               decompressed[:0x10].hex(" "))
+                           + " unused data len 0x{:x}".format(
+                               len(decompressed_unused))
+                           + " {}".format(
+                               decompressed_unused[:0x10].hex(" "))
+                           )
+                data.close()
 
-                #data.seek(0)
+                data = binwalk.core.common.BlockFile(decompressed,
+                                                     subclass=binwalk.core.common.StringFile)
                 print ("NPK file items")
+                print ("data tell {}".format(data.tell()))
+                print ("data size{}".format(data.size))
                 count = 0
-                while data.tell() < (self.npk_file_chunk_next_header - 4):
-                    print ("index: %d" % count)
+                while data.tell() < data.size:
+                    #print ("index: %d" % count)
                     count += 1
                     self._parse_npk_file_item(data)
 
-                npk_file_crc32 = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
                 print("FILE ITEMS END")
-                print("file crc32?: 0x{:08x}".format(npk_file_crc32))
-
-                data.close()
