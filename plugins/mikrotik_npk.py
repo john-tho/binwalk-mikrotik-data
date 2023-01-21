@@ -73,13 +73,7 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
         if npk_item_type == 4: #"file container",
             data.seek(npk_item_data_offset)
             npk_item_bytes = binwalk.core.compat.str2bytes(data.read(n=npk_item_size))
-            print_offset = 0
-            print_length = 0x50
-            while ((print_offset < print_length) &
-                   (len(npk_item_bytes[print_offset:print_offset+0x10]) > 0)):
-                print ("0x{:x} = {}".format(npk_item_data_offset+print_offset,
-                                            npk_item_bytes[print_offset:print_offset+0x10].hex(" ")))
-                print_offset = print_offset+0x10
+            print_hex(npk_item_bytes, 0, 0x20)
             data.seek(npk_item_offset)
 
         if npk_item_type == 9:
@@ -144,3 +138,12 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
                     self._parse_npk_item(data)
 
                 data.close()
+
+def print_hex(data, offset, length, width=0x10):
+    end_offset = offset + length
+    data_line = data[offset:offset+0x10]
+    print (f"\tpayload bytes[0x{offset:x}:0x{end_offset:x}]")
+    while ((offset < end_offset) & (len(data[offset:]) > 0)):
+        print ("\t0x{:08x} = {}".format(offset,
+                                    data[offset:offset+width].hex(" ")))
+        offset += width
