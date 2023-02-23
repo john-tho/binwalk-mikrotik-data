@@ -21,16 +21,6 @@
 >14	string	x	image name: "%s"
 # footer 03 00 00 00 00 00
 
-# Hard config
-0	string	Hard	Mikrotik Hard config header (LE)
-
-0	string	draH	Mikrotik Hard config header (BE)
-
-# Soft config
-0	string	Soft	Mikrotik Soft config header (LE)
-
-0	string	tfoS	Mikrotik Soft config header (BE)
-
 # Mikrotik cfg
 # soft has CRC32, hard does not
 0	regex	(draH|tfoS)	Mikrotik CFG header (BE):
