@@ -66,15 +66,15 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
         npk_item_size = struct.unpack("<L", binwalk.core.compat.str2bytes(data.read(n=4)))[0]
         npk_item_data_offset = data.tell()
         npk_item = ""
-        if npk_item_type not in [4,21,22]:
+        npk_item_bytes = binwalk.core.compat.str2bytes(data.read(n=npk_item_size))
+        data.seek(npk_item_data_offset)
+        if npk_item_type not in [4,9,21,22]:
             npk_item = struct.unpack("{}s".format(npk_item_size), binwalk.core.compat.str2bytes(data.read(n=npk_item_size)))[0]
         else:
             data.seek(data.tell() + npk_item_size)
         if npk_item_type == 4: #"file container",
             data.seek(npk_item_data_offset)
-            npk_item_bytes = binwalk.core.compat.str2bytes(data.read(n=npk_item_size))
             print_hex(npk_item_bytes, 0, 0x20)
-            data.seek(npk_item_offset)
 
         if npk_item_type == 9:
             self._signature_reached = True
@@ -82,7 +82,7 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
             self._hash.update(binwalk.core.compat.str2bytes(data.read(n=6)))
             data.seek(data.tell() + npk_item_size)
             hash_match = False
-            stored_hash = npk_item[:self._hash.digest_size]
+            stored_hash = npk_item_bytes[:self._hash.digest_size]
             if (stored_hash == self._hash.digest()):
                 hash_match = True
             if hash_match:
@@ -90,6 +90,7 @@ class MikrotikNPKParser(binwalk.core.plugin.Plugin):
             else:
                 print ("hashes nomatch")
             print ("hash: {:s}".format(self._hash.hexdigest()))
+            print_hex(npk_item_bytes, 0, 0x20)
         if not self._signature_reached:
             data.seek(npk_item_offset)
             self._hash.update(binwalk.core.compat.str2bytes(data.read(n=npk_item_size+6)))
