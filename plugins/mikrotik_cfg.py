@@ -82,7 +82,7 @@ class MikrotikCFGParser(binwalk.core.plugin.Plugin):
             cfg_item_size = tag_part1
             cfg_item_type = tag_part2
 
-        if (cfg_item_type < 0 or cfg_item_type > 0x100 or
+        if (cfg_item_type < 0 or cfg_item_type > 0x8201 or
                 cfg_item_size <= 0 or cfg_item_size > 0x10000):
             data.seek(tag_start_offset)
             return False

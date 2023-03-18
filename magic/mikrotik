@@ -40,8 +40,11 @@
 #>>4	ubeshort	>0	{strlen:%d}
 #>>>8	string	x	tag_value: {string}%s
 
-0	regex	(Hard|Soft)	Mikrotik CFG header (LE):
->0	ulelong	x	{strlen:4}
+0	regex	(Hard|Soft|DRE\x00)	Mikrotik CFG header (LE):
+>0	regex	(Hard|Soft)
+>>0	ulelong	x	{strlen:4}
+>0	regex	(DRE\x00)
+>>0	ulelong	x	{strlen:3}
 >0	string	x	type: {string}%s;
 >0	string	Soft
 >>4	ulelong	>0	CRC32: "0x%x", #CRC32 (rhash) of whole cfg part, with crc32 bytes zeroed
@@ -50,13 +53,13 @@
 >>10	uleshort	>0	(len: 0x%x)
 #>>>10	ubeshort	>0	{strlen:%d}
 #>>>12	string	x	tag_value: {string}%b
->0	string	Hard
+>0	regex (Hard|DRE\x00)
 >>4	uleshort	>0	first tag: id: 0x%x
+>0	regex (Hard)
 >>4	uleshort	>0x50	{invalid}
 >>6	uleshort	>0	(len: 0x%x)
 #>>6	ubeshort	>0	{strlen:%d}
 #>>>8	string	x	tag_value: {string}%s
-
 
 # Mikrotik FWF file headers (0x20 long)
 0	regex	(4qpi|4Npi|0qpi|7qpi|sysM|73AM|461a|NplA|nplA)	Mikrotik ARM FWF header:
